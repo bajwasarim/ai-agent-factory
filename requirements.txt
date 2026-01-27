@@ -1,0 +1,10 @@
+# Core dependencies
+openai>=1.0.0
+python-dotenv>=1.0.0
+pyyaml>=6.0
+requests>=2.31.0
+rich>=13.0.0
+
+# Google Sheets integration
+gspread>=5.12.0
+google-auth>=2.25.0
