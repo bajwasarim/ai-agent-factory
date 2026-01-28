@@ -284,25 +284,29 @@ class LeadRouterAgent(BaseAgent):
         # Route all leads (pure function call)
         routed = route_leads(businesses)
 
-        # Build summary
-        summary = {
-            "total": len(businesses),
-            "targets": len(routed["targets"]),
+        # Flatten in stable order: TARGET → EXCLUDED → RETRY
+        # This ensures deterministic exports and debug traceability
+        flat_routed_leads = (
+            routed["targets"] + routed["excluded"] + routed["retry"]
+        )
+
+        # Build routing stats for observability
+        routing_stats = {
+            "target": len(routed["targets"]),
             "excluded": len(routed["excluded"]),
             "retry": len(routed["retry"]),
+            "total": len(flat_routed_leads),
         }
 
         # Log results
         logger.info(
-            f"Routed {summary['total']} leads: "
-            f"{summary['targets']} TARGET, "
-            f"{summary['excluded']} EXCLUDED, "
-            f"{summary['retry']} RETRY"
+            f"Routed {routing_stats['total']} leads: "
+            f"{routing_stats['target']} TARGET, "
+            f"{routing_stats['excluded']} EXCLUDED, "
+            f"{routing_stats['retry']} RETRY"
         )
 
         return {
-            "routed_leads": routed,
-            "routing_summary": summary,
-            # Pass through for downstream compatibility
-            "validated_businesses": businesses,
+            "routed_leads": flat_routed_leads,
+            "routing_stats": routing_stats,
         }

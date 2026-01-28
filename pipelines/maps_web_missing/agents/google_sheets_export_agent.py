@@ -280,7 +280,13 @@ class GoogleSheetsExportAgent(BaseAgent):
         collision_prevented = 0
 
         for lead in leads:
-            dedup_key = self._compute_dedup_key(lead)
+            # Use pre-computed dedup_key from BusinessNormalizeAgent (single source of truth)
+            dedup_key = lead.get("dedup_key")
+            if not dedup_key:
+                raise RuntimeError(
+                    f"Exporter contract violation: dedup_key missing. "
+                    f"Lead id={lead.get('place_id', 'unknown')}"
+                )
             if dedup_key in existing_hashes:
                 duplicate_count += 1
                 logger.debug(f"Skipped duplicate: {dedup_key[:50]}...")

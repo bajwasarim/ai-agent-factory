@@ -4,6 +4,7 @@ from pipelines.core.runner import PipelineRunner
 from pipelines.maps_web_missing.agents.maps_search_agent import MapsSearchAgent
 from pipelines.maps_web_missing.agents.business_normalize_agent import BusinessNormalizeAgent
 from pipelines.maps_web_missing.agents.website_presence_validator import WebsitePresenceValidator
+from pipelines.maps_web_missing.agents.lead_router_agent import LeadRouterAgent
 from pipelines.maps_web_missing.agents.lead_formatter_agent import LeadFormatterAgent
 from pipelines.maps_web_missing.agents.google_sheets_export_agent import GoogleSheetsExportAgent
 from pipelines.maps_web_missing.config import PIPELINE_NAME
@@ -22,11 +23,15 @@ def build_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
         │  → raw_search_results                       │
         ├─────────────────────────────────────────────┤
         │  BusinessNormalizeAgent                     │
-        │  → normalized_businesses                    │
+        │  → normalized_businesses (with dedup_key)   │
         ├─────────────────────────────────────────────┤
         │  WebsitePresenceValidator                   │
         │  → validated_businesses                     │
         │  (appends: has_real_website, website_status)│
+        ├─────────────────────────────────────────────┤
+        │  LeadRouterAgent                            │
+        │  → routed_leads (flat list: TARGET→EXCLUDED→│
+        │    RETRY), routing_stats                    │
         ├─────────────────────────────────────────────┤
         │  LeadFormatterAgent                         │
         │  → formatted_leads, summary                 │
@@ -48,6 +53,7 @@ def build_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
             MapsSearchAgent(),
             BusinessNormalizeAgent(),
             WebsitePresenceValidator(),
+            LeadRouterAgent(),
             LeadFormatterAgent(),
             GoogleSheetsExportAgent(enable_file_backup=enable_file_backup),
         ],

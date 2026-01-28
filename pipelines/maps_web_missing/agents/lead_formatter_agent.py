@@ -26,26 +26,35 @@ class LeadFormatterAgent(BaseAgent):
 
     def run(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Format validated businesses into final lead structure.
+        Format routed leads into final lead structure.
+
+        Transparent transformer: field rename/formatting only.
+        No filtering, no routing logic, no dedup generation.
 
         Args:
-            input_data: Dict with 'validated_businesses' from validator
-                       (falls back to 'normalized_businesses' for compatibility).
+            input_data: Dict with 'routed_leads' from LeadRouterAgent.
 
         Returns:
             Dict with 'formatted_leads' and 'summary'.
+
+        Raises:
+            ValueError: If dedup_key is missing (pipeline contract violation).
         """
-        # Accept validated_businesses (new) or normalized_businesses (fallback)
-        businesses = input_data.get(
-            "validated_businesses",
-            input_data.get("normalized_businesses", [])
-        )
+        # Read from routed_leads (new contract)
+        businesses = input_data.get("routed_leads", [])
         query = input_data.get("query", "")
         location = input_data.get("location", "")
 
         formatted_leads: List[Dict[str, Any]] = []
 
         for idx, business in enumerate(businesses):
+            # Contract invariant: dedup_key must exist from BusinessNormalizeAgent
+            if "dedup_key" not in business:
+                raise ValueError(
+                    f"Pipeline contract violation: dedup_key missing in LeadFormatterAgent input. "
+                    f"Lead id={business.get('place_id', 'unknown')}"
+                )
+
             # Use validated has_real_website if available, else fallback to checking website field
             has_real_website = business.get(
                 "has_real_website",
@@ -65,11 +74,16 @@ class LeadFormatterAgent(BaseAgent):
                 "reviews": business.get("reviews", ""),
                 "address": business.get("address", ""),
                 "place_id": business.get("place_id", ""),
+                # Dedup key (pass-through from BusinessNormalizeAgent)
+                "dedup_key": business.get("dedup_key"),
                 # Website validation fields (from WebsitePresenceValidator)
                 "has_website": bool(business.get("website", "")),
                 "has_real_website": has_real_website,
                 "website_status": business.get("website_status", ""),
                 "website_checked_at": business.get("website_checked_at", ""),
+                # Routing fields (from LeadRouterAgent)
+                "lead_route": business.get("lead_route", ""),
+                "target_sheet": business.get("target_sheet", ""),
             })
 
         # Count based on validated website status
