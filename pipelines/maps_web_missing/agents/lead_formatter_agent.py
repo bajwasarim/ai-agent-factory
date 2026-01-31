@@ -84,6 +84,9 @@ class LeadFormatterAgent(BaseAgent):
                 # Routing fields (from LeadRouterAgent)
                 "lead_route": business.get("lead_route", ""),
                 "target_sheet": business.get("target_sheet", ""),
+                # Retry fields (from RetryInputLoaderAgent - preserve if present)
+                "retry_attempt": business.get("retry_attempt"),
+                "last_retry_ts": business.get("last_retry_ts"),
             })
 
         # Count based on validated website status

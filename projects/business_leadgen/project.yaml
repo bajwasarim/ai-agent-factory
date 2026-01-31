@@ -1,0 +1,7 @@
+project_name: business_leadgen
+description: Generate business leads with websites for landing page creation
+inputs:
+  - query
+  - location
+outputs:
+  - leads

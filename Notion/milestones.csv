@@ -1,0 +1,12 @@
+Title,Status,Owner,Priority,Notes
+Repo & Environment Setup,Completed,You,High,"Folder structure, venv, Copilot setup done"
+LLM Client Infrastructure,Completed,You,High,Provider-agnostic client implemented
+Pipeline Execution Engine,Completed,You,High,Sequential runner with logging complete
+Tool Registry & Serper Integration,Completed,You,High,External scraping layer ready
+Business Lead Generation Pipeline,In Progress,You,High,Agents wired and ready for live test
+Google Sheets Integration,Next,You,High,Export automation for leads
+Landing Page Generator Agent,Next,You,High,LLM driven HTML generation
+Batch Processing Engine,Planned,You,Medium,Parallel pipeline executor
+CLI Interface,Planned,You,Medium,Local execution UX
+Docker Deployment,Planned,You,Medium,Portable runtime
+Client Delivery Documentation,Planned,You,Low,Onboarding guide

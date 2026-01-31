@@ -1,0 +1,7 @@
+Risk,Impact,Probability,Mitigation,Owner,Status
+Serper API quota exhaustion,High,Medium,Batch throttling and caching,You,Open
+LLM token cost spikes,High,Medium,Token caps and batching,You,Open
+Scraping result quality issues,Medium,Medium,Normalization and validation layer,You,Open
+Google API auth complexity,Medium,Low,Service account setup guide,You,Planned
+Architecture overcomplexity,Medium,Low,Phase-based delivery,You,Monitoring
+Client data privacy compliance,High,Low,No persistent storage,You,Planned

@@ -1,0 +1,14 @@
+Task,Phase,Status,Priority,Assigned To,Description
+Create LLM client abstraction,Infrastructure,Done,High,You,Environment driven model client
+Implement Pipeline Runner,Infrastructure,Done,High,You,Sequential execution engine
+Build Tool Registry,Infrastructure,Done,High,You,Global callable tool interface
+Integrate Serper API,Data Layer,Done,High,You,Scraping integration
+Create Business Search Agent,LeadGen,Done,High,You,Serper query wrapper
+Normalize Search Results,LeadGen,Done,Medium,You,Structured business data
+Website Filtering Logic,LeadGen,Done,Medium,You,Remove non-website results
+Google Sheets Writer Tool,Export,Todo,High,You,Sheet append automation
+Batch Execution Support,Scaling,Todo,Medium,You,Large job handling
+Landing Page Prompt Templates,LandingGen,Todo,High,You,LLM HTML generation prompts
+CLI Interface Commands,UX,Todo,Medium,You,Command-line runner
+Dockerfile Setup,Deployment,Todo,Medium,You,Container packaging
+Readme & Docs,Docs,Todo,Low,You,User documentation

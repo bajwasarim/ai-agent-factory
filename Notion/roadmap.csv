@@ -1,0 +1,6 @@
+Phase,Goal,Deliverables,Timeline,Status
+PoC,Working lead generator pipeline,"Business search + filtering + export",5-7 days,In Progress
+MVP,Client-ready automation platform,Sheets export + landing page generator,2 weeks,Planned
+Pilot Deployment,First paying client demo,Demo dataset + CLI runner,1 week,Planned
+Scale,Production reliability,Batch engine + Docker,2 weeks,Planned
+Monetization,SaaS packaging,Subscription infra,Future,Backlog

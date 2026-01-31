@@ -167,7 +167,8 @@ class WebsitePresenceValidator(BaseAgent):
         Validate website presence for all normalized businesses.
 
         Args:
-            input_data: Dict with 'normalized_businesses' list.
+            input_data: Dict with 'normalized_businesses' or 'validated_businesses' list.
+                        (supports both normal ingestion and retry mode)
 
         Returns:
             Dict with 'validated_businesses' list containing appended fields:
@@ -175,7 +176,8 @@ class WebsitePresenceValidator(BaseAgent):
                 - website_status: "valid" | "invalid" | "missing" | "error"
                 - website_checked_at: ISO timestamp
         """
-        businesses = input_data.get("normalized_businesses", [])
+        # Support both normal mode (normalized_businesses) and retry mode (validated_businesses)
+        businesses = input_data.get("normalized_businesses") or input_data.get("validated_businesses", [])
 
         if not businesses:
             logger.warning("No businesses to validate")
