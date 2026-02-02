@@ -1,199 +1,212 @@
-You are a senior Python platform engineer.
+# AI Agent Factory
 
-Create a LOCAL-FIRST, modular AI Agent Factory framework for running multi-agent automation pipelines.
+Local-first modular AI agent framework for running multi-agent automation pipelines.
 
-GOAL:
-Build a reusable internal framework that can load project configs, initialize agents, execute pipelines sequentially, and support future expansion to parallel execution and cloud deployment.
+## Features
 
-CONSTRAINTS:
-- Local execution only (no cloud dependencies)
-- Lightweight
-- Production-quality structure
-- Easy extensibility
-- No hardcoded project logic in core
-- Environment variable driven secrets
-- Config-driven projects
+- **Modular Architecture**: Reusable core with strict separation from project-specific logic
+- **Pipeline Engine**: Sequential agent execution with automatic output chaining
+- **Config-Driven Projects**: YAML-based project configuration
+- **Mock Mode Support**: Full testing without external API calls
+- **Google Sheets Integration**: Export leads with fan-out by route
 
-----------------------------------
-PROJECT ROOT STRUCTURE (MANDATORY)
-----------------------------------
+## Quick Start
 
-Create this exact structure:
+### 1. Setup Environment
 
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate (Windows)
+venv\Scripts\activate
+
+# Activate (macOS/Linux)
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### 2. Configure Environment Variables
+
+```bash
+cp .env.example .env
+# Edit .env with your API keys
+```
+
+Required environment variables:
+- `OPENAI_API_KEY` - OpenAI API key
+- `SERPER_API_KEY` - Serper API key for Google Maps search
+- `GOOGLE_SHEETS_CREDENTIALS_PATH` - Path to Google service account JSON
+
+Optional environment variables:
+- `MOCK_MAPS=1` - Use mock Maps data
+- `MOCK_SHEETS=1` - Use mock Sheets operations
+- `MOCK_WEBSITE_CHECK=1` - Use mock website validation
+- `PIPELINE_MAX_RETRIES=3` - Max retry attempts for failed validations
+- `PIPELINE_MODE=normal|retry` - Pipeline execution mode
+
+### 3. Run Pipeline
+
+```bash
+# Normal mode - full pipeline from Maps search
+python main.py
+
+# Retry mode - reprocess failed website validations
+python main.py --mode retry
+```
+
+## Project Structure
+
+```
 ai-agent-factory/
+├── core/                    # Reusable base classes (NEVER project-specific)
+│   ├── agent_base.py        # BaseAgent abstract class
+│   ├── task_base.py         # BaseTask abstract class
+│   ├── llm_client.py        # LLM client wrapper
+│   ├── tool_registry.py     # Tool registration system
+│   ├── config_loader.py     # YAML config loader
+│   ├── logger.py            # Colored console logging
+│   └── tools/               # Reusable tools
+│       └── serper_tool.py   # Serper API integration
 │
-├── core/
-│   ├── agent_base.py
-│   ├── task_base.py
-│   ├── llm_client.py
-│   ├── tool_registry.py
-│   ├── config_loader.py
-│   └── logger.py
-│
-├── projects/
-│   └── landing_generator/
-│       ├── project.yaml
-│       ├── agents.py
-│       ├── tasks.py
-│       └── pipeline.py
+├── projects/                # Project-specific implementations
+│   ├── business_leadgen/    # Business lead generation project
+│   │   ├── project.yaml     # Project configuration
+│   │   ├── agents.py        # Project agents
+│   │   └── pipeline.py      # Pipeline builder
+│   └── landing_generator/   # Landing page generator (skeleton)
 │
 ├── pipelines/
-│   └── runner.py
+│   └── runner.py            # PipelineRunner engine
 │
-├── prompts/
-│   └── templates/
-│
+├── prompts/templates/       # Prompt templates
 ├── data/
-│   ├── inputs/
-│   └── outputs/
-│
-├── main.py
-├── requirements.txt
-├── .env.example
-└── README.md
+│   ├── inputs/              # Input data
+│   └── outputs/             # Output data
+├── tests/                   # Test suite (122 tests)
+├── main.py                  # Main entrypoint
+└── requirements.txt         # Dependencies
+```
 
-----------------------------------
-CORE MODULE REQUIREMENTS
-----------------------------------
+## Business Lead Generation Project
 
-Implement:
+The `business_leadgen` project identifies businesses WITHOUT real websites for landing-page outreach targeting.
 
-1) BaseAgent abstract class
-- Located in core/agent_base.py
-- Must enforce run(input_data) method
-- Accept name and optional tools list
+### Pipeline Modes
 
-2) BaseTask abstract class
-- Located in core/task_base.py
-- Must support execute(context) interface
+**Normal Mode** (default):
+```
+MapsSearchAgent → BusinessNormalizeAgent → WebsitePresenceValidator 
+    → LeadRouterAgent → LeadFormatterAgent → GoogleSheetsExportAgent
+```
 
-3) LLM Client Wrapper
-- Located in core/llm_client.py
-- Must support generate(prompt, model="gpt-4o-mini")
-- Load API key from environment variable
-- Must be easily swappable for Claude later
+**Retry Mode**:
+```
+RetryInputLoaderAgent → WebsitePresenceValidator 
+    → LeadRouterAgent → LeadFormatterAgent → GoogleSheetsExportAgent
+```
 
-4) Tool Registry
-- Located in core/tool_registry.py
-- Must allow register(name, func)
-- Must allow get(name)
+### CLI Options
 
-5) Config Loader
-- YAML loader
-- Located in core/config_loader.py
+```bash
+# Normal execution
+python main.py
 
-6) Logger Utility
-- Located in core/logger.py
-- Use Python logging module
-- Colored console output preferred
-- Timestamped logs
+# Retry failed validations
+python main.py --mode retry
 
-----------------------------------
-PIPELINE ENGINE
-----------------------------------
+# Custom retry sheet
+python main.py --mode retry --retry-sheet-name CUSTOM_ERRORS
 
-Implement PipelineRunner in:
+# Specify spreadsheet
+python main.py --spreadsheet-id <SHEET_ID>
+```
 
-pipelines/runner.py
+### Google Sheets Output
 
-Features:
-- Accept ordered list of agents
-- Execute sequentially
-- Pass output of agent N into agent N+1
-- Log agent start/end
+Leads are exported to three worksheets:
+- `NO_WEBSITE_TARGETS` - Businesses without websites (primary leads)
+- `HAS_WEBSITE_EXCLUDED` - Businesses with websites (excluded)
+- `WEBSITE_CHECK_ERRORS` - Failed validations (for retry)
 
-----------------------------------
-LANDING GENERATOR PROJECT (SKELETON ONLY)
+## Adding New Projects
 
-Create placeholder project that demonstrates structure.
+1. Create folder: `projects/<project_name>/`
 
-landing_generator/project.yaml:
+2. Add `project.yaml`:
+```yaml
+project_name: my_project
+description: Project description
+agents:
+  - MyFirstAgent
+  - MySecondAgent
+inputs:
+  - query
+outputs:
+  - results
+```
 
-Include fields:
-- project_name
-- description
-- agents list
-- inputs
-- outputs
+3. Create `agents.py`:
+```python
+from core.agent_base import BaseAgent
 
-landing_generator/agents.py:
+class MyFirstAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(name="MyFirstAgent")
+    
+    def run(self, input_data: dict) -> dict:
+        # Your logic here
+        return {"output": "result"}
+```
 
-Create placeholder agents:
-- ScraperAgent (stub)
-- FilterAgent (stub)
-- ContentAgent (stub)
+4. Create `pipeline.py`:
+```python
+from pipelines.runner import PipelineRunner
+from .agents import MyFirstAgent, MySecondAgent
 
-Each must inherit BaseAgent.
+def build_pipeline() -> PipelineRunner:
+    return PipelineRunner([
+        MyFirstAgent(),
+        MySecondAgent(),
+    ])
+```
 
-landing_generator/tasks.py:
+## Testing
 
-Define placeholder task objects if needed.
+```bash
+# Run all tests
+python -m pytest tests/ -v
 
-landing_generator/pipeline.py:
+# Run specific test file
+python -m pytest tests/test_retry_input_loader.py -v
 
-Expose function:
+# Run with coverage
+python -m pytest tests/ --cov=projects --cov-report=term-missing
+```
 
-build_pipeline()
+### Test Coverage
 
-Which returns PipelineRunner instance with initialized agents.
+| Test File | Tests | Coverage |
+|-----------|-------|----------|
+| test_retry_input_loader.py | 58 | Retry agent logic |
+| test_retry_pipeline_mode.py | 35 | Mode selection |
+| test_pipeline_contract.py | 10 | Formatter/router invariants |
+| test_export_fanout.py | 17 | Fan-out export behavior |
+| test_sheets_export.py | 2 | Integration tests |
+| **Total** | **122** | All passing |
 
-----------------------------------
-MAIN ENTRYPOINT
+## Dependencies
 
-main.py must:
+- `openai` - LLM client
+- `python-dotenv` - Environment variable loading
+- `pyyaml` - YAML configuration
+- `requests` - HTTP client
+- `rich` - Colored console output
+- `gspread` - Google Sheets API
+- `google-auth` - Google authentication
 
-- Load landing generator pipeline
-- Pass sample input:
-    city: "Austin"
-    niche: "dentists"
-- Run pipeline
-- Print completion message
+## License
 
-----------------------------------
-REQUIREMENTS.TXT
-
-Include:
-
-openai
-python-dotenv
-pyyaml
-requests
-rich
-
-----------------------------------
-ENV FILE
-
-Create .env.example with:
-
-OPENAI_API_KEY=
-SERPER_API_KEY=
-
-----------------------------------
-README.md
-
-Include:
-
-- Setup instructions
-- Virtualenv setup
-- How to run main.py
-- Folder explanation
-- How to add new projects
-
-----------------------------------
-CODE QUALITY RULES
-
-- Use type hints
-- Use docstrings
-- Avoid global state
-- Modular imports only
-- No hardcoded secrets
-- Fail gracefully with errors
-
-----------------------------------
-OUTPUT
-
-Generate all files with production-ready boilerplate and placeholder implementations that run without crashing.
-
-After generation, ensure main.py can run and execute stub pipeline successfully.
-
-Now generate the full project scaffold.
+MIT
