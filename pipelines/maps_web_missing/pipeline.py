@@ -8,14 +8,21 @@ Supports two execution modes:
 import os
 from typing import Literal
 
+from core.infrastructure import MessageBus, StateStore
 from pipelines.core.runner import PipelineRunner
 from pipelines.maps_web_missing.agents.maps_search_agent import MapsSearchAgent
 from pipelines.maps_web_missing.agents.business_normalize_agent import BusinessNormalizeAgent
 from pipelines.maps_web_missing.agents.website_presence_validator import WebsitePresenceValidator
 from pipelines.maps_web_missing.agents.lead_router_agent import LeadRouterAgent
+from pipelines.maps_web_missing.agents.lead_scoring_agent import LeadScoringAgent
+from pipelines.maps_web_missing.agents.enrichment_aggregator_agent import EnrichmentAggregatorAgent
 from pipelines.maps_web_missing.agents.lead_formatter_agent import LeadFormatterAgent
 from pipelines.maps_web_missing.agents.google_sheets_export_agent import GoogleSheetsExportAgent
 from pipelines.maps_web_missing.agents.retry_input_loader_agent import RetryInputLoaderAgent
+from pipelines.maps_web_missing.agents.landing_page_generator_agent import LandingPageGeneratorAgent
+from pipelines.maps_web_missing.agents.outreach_orchestrator import OutreachOrchestrator
+from pipelines.maps_web_missing.agents.email_outreach_agent import EmailOutreachAgent
+from pipelines.maps_web_missing.agents.whatsapp_outreach_agent import WhatsAppOutreachAgent
 from pipelines.maps_web_missing.config import PIPELINE_NAME
 from core.logger import get_logger
 
@@ -24,6 +31,7 @@ logger = get_logger(__name__)
 
 __all__ = [
     "build_pipeline",
+    "build_outreach_agents",
     "PIPELINE_NAME",
     "VALID_MODES",
     "get_pipeline_mode",
@@ -95,8 +103,12 @@ def _build_normal_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
         BusinessNormalizeAgent → normalized_businesses (with dedup_key)
         WebsitePresenceValidator → validated_businesses
         LeadRouterAgent → routed_leads, routing_stats
+        LeadScoringAgent → scored_leads (Phase 4)
+        EnrichmentAggregatorAgent → enriched_leads (Phase 4)
         LeadFormatterAgent → formatted_leads
-        GoogleSheetsExportAgent → export_status
+        GoogleSheetsExportAgent → exported_leads, export_status
+        LandingPageGeneratorAgent → landing_pages (Phase 5, post-export)
+        OutreachOrchestrator → outreach_results (Phase 6, queues leads for outreach)
 
     Args:
         enable_file_backup: Whether to also export to JSON/CSV files.
@@ -113,8 +125,12 @@ def _build_normal_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
             BusinessNormalizeAgent(),
             WebsitePresenceValidator(),
             LeadRouterAgent(),
+            LeadScoringAgent(),              # Phase 4
+            EnrichmentAggregatorAgent(),     # Phase 4
             LeadFormatterAgent(),
             GoogleSheetsExportAgent(enable_file_backup=enable_file_backup),
+            LandingPageGeneratorAgent(),     # Phase 5 (post-export)
+            OutreachOrchestrator(),          # Phase 6 (queues leads for outreach)
         ],
     )
 
@@ -128,8 +144,12 @@ def _build_retry_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
         (skips BusinessNormalizeAgent - data already normalized in sheet)
         WebsitePresenceValidator → validated_businesses (updated)
         LeadRouterAgent → routed_leads, routing_stats
+        LeadScoringAgent → scored_leads (Phase 4)
+        EnrichmentAggregatorAgent → enriched_leads (Phase 4)
         LeadFormatterAgent → formatted_leads
-        GoogleSheetsExportAgent → export_status
+        GoogleSheetsExportAgent → exported_leads, export_status
+        LandingPageGeneratorAgent → landing_pages (Phase 5, post-export)
+        OutreachOrchestrator → outreach_results (Phase 6, queues leads for outreach)
 
     Note:
         RetryInputLoaderAgent outputs `validated_businesses` directly,
@@ -152,8 +172,12 @@ def _build_retry_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
             # Note: BusinessNormalizeAgent skipped - retry data already normalized
             WebsitePresenceValidator(),
             LeadRouterAgent(),
+            LeadScoringAgent(),              # Phase 4
+            EnrichmentAggregatorAgent(),     # Phase 4
             LeadFormatterAgent(),
             GoogleSheetsExportAgent(enable_file_backup=enable_file_backup),
+            LandingPageGeneratorAgent(),     # Phase 5 (post-export)
+            OutreachOrchestrator(),          # Phase 6 (queues leads for outreach)
         ],
     )
 
@@ -233,3 +257,69 @@ def build_pipeline(
         return _build_retry_pipeline(enable_file_backup=enable_file_backup)
     else:
         return _build_normal_pipeline(enable_file_backup=enable_file_backup)
+
+
+def build_outreach_agents(
+    state_store: StateStore | None = None,
+    message_bus: MessageBus | None = None,
+) -> tuple[OutreachOrchestrator, EmailOutreachAgent, WhatsAppOutreachAgent]:
+    """
+    Build and configure the Phase 6 outreach agents.
+
+    The outreach system consists of:
+        - OutreachOrchestrator: State machine that queues leads for outreach
+        - EmailOutreachAgent: Subscribes to EMAIL_SEND events, sends emails
+        - WhatsAppOutreachAgent: Subscribes to WHATSAPP_SEND events
+
+    Note:
+        The OutreachOrchestrator is also included in the main pipeline.
+        Call this function to get the channel agents which operate via
+        event subscription.
+
+    Usage:
+        orchestrator, email_agent, whatsapp_agent = build_outreach_agents()
+        email_agent.start()
+        whatsapp_agent.start()
+        
+        # Run pipeline (includes orchestrator)
+        pipeline = build_pipeline()
+        result = pipeline.run(context)
+        
+        # Channel agents process events during/after pipeline run
+        
+        # Cleanup
+        email_agent.stop()
+        whatsapp_agent.stop()
+
+    Args:
+        state_store: StateStore instance (creates new if None)
+        message_bus: MessageBus instance (creates new if None)
+
+    Returns:
+        Tuple of (OutreachOrchestrator, EmailOutreachAgent, WhatsAppOutreachAgent)
+    """
+    logger.info("Building Phase 6 outreach agents")
+
+    # Create shared infrastructure if not provided
+    store = state_store or StateStore()
+    bus = message_bus or MessageBus()
+
+    # Create orchestrator with shared infrastructure
+    orchestrator = OutreachOrchestrator(
+        state_store=store,
+        message_bus=bus,
+    )
+
+    # Create channel agents
+    email_agent = EmailOutreachAgent(
+        orchestrator=orchestrator,
+        message_bus=bus,
+    )
+
+    whatsapp_agent = WhatsAppOutreachAgent(
+        orchestrator=orchestrator,
+        message_bus=bus,
+    )
+
+    logger.info("Outreach agents configured (not yet started)")
+    return orchestrator, email_agent, whatsapp_agent
