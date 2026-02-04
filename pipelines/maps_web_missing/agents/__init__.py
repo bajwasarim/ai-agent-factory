@@ -11,6 +11,9 @@ from pipelines.maps_web_missing.agents.exporter_agent import ExporterAgent
 from pipelines.maps_web_missing.agents.google_sheets_export_agent import GoogleSheetsExportAgent
 from pipelines.maps_web_missing.agents.retry_input_loader_agent import RetryInputLoaderAgent
 from pipelines.maps_web_missing.agents.landing_page_generator_agent import LandingPageGeneratorAgent
+from pipelines.maps_web_missing.agents.outreach_orchestrator import OutreachOrchestrator
+from pipelines.maps_web_missing.agents.email_outreach_agent import EmailOutreachAgent
+from pipelines.maps_web_missing.agents.whatsapp_outreach_agent import WhatsAppOutreachAgent
 
 __all__ = [
     "MapsSearchAgent",
@@ -24,4 +27,7 @@ __all__ = [
     "GoogleSheetsExportAgent",
     "RetryInputLoaderAgent",
     "LandingPageGeneratorAgent",
+    "OutreachOrchestrator",
+    "EmailOutreachAgent",
+    "WhatsAppOutreachAgent",
 ]
