@@ -299,19 +299,19 @@ class TestPhase4IsAdditive:
 class TestPhase4PipelineWiring:
     """Verify Phase 4 agents are wired correctly in pipeline."""
 
-    def test_normal_pipeline_has_nine_agents(self):
-        """Normal pipeline has 9 agents after Phase 4+5."""
+    def test_normal_pipeline_has_ten_agents(self):
+        """Normal pipeline has 10 agents after Phases 4+5+6."""
         from pipelines.maps_web_missing.pipeline import _build_normal_pipeline
 
         pipeline = _build_normal_pipeline()
-        assert len(pipeline.agents) == 9
+        assert len(pipeline.agents) == 10
 
-    def test_retry_pipeline_has_eight_agents(self):
-        """Retry pipeline has 8 agents after Phase 4+5."""
+    def test_retry_pipeline_has_nine_agents(self):
+        """Retry pipeline has 9 agents after Phases 4+5+6."""
         from pipelines.maps_web_missing.pipeline import _build_retry_pipeline
 
         pipeline = _build_retry_pipeline()
-        assert len(pipeline.agents) == 8
+        assert len(pipeline.agents) == 9
 
     def test_scoring_agent_after_router(self):
         """LeadScoringAgent comes immediately after LeadRouterAgent."""
@@ -349,16 +349,16 @@ class TestPhase4PipelineWiring:
 
         assert formatter_idx == enrichment_idx + 1
 
-    def test_landing_page_agent_is_last(self):
-        """LandingPageGeneratorAgent is the last agent (post-export)."""
+    def test_outreach_orchestrator_is_last(self):
+        """OutreachOrchestrator is the last agent (Phase 6, post-landing)."""
         from pipelines.maps_web_missing.pipeline import _build_normal_pipeline
 
         pipeline = _build_normal_pipeline()
-        assert pipeline.agents[-1].name == "LandingPageGeneratorAgent"
+        assert pipeline.agents[-1].name == "OutreachOrchestrator"
 
-    def test_export_agent_before_landing_page(self):
-        """GoogleSheetsExportAgent is second-to-last, before landing pages."""
+    def test_landing_page_agent_before_outreach(self):
+        """LandingPageGeneratorAgent is second-to-last, before outreach."""
         from pipelines.maps_web_missing.pipeline import _build_normal_pipeline
 
         pipeline = _build_normal_pipeline()
-        assert pipeline.agents[-2].name == "GoogleSheetsExportAgent"
+        assert pipeline.agents[-2].name == "LandingPageGeneratorAgent"

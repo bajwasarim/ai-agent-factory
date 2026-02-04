@@ -106,8 +106,8 @@ class OutreachOrchestrator(BaseAgent):
         """Initialize the outreach orchestrator.
         
         Args:
-            state_store: StateStore instance (uses singleton if None)
-            message_bus: MessageBus instance (uses singleton if None)
+            state_store: StateStore instance (creates new if None)
+            message_bus: MessageBus instance (creates new if None)
             email_delay_hours: Hours to wait before first email
             escalation_delay_hours: Hours to wait before WhatsApp escalation
             max_email_retries: Maximum email send attempts
@@ -115,8 +115,8 @@ class OutreachOrchestrator(BaseAgent):
         """
         super().__init__(name="OutreachOrchestrator")
         
-        self.state_store = state_store or StateStore.get_instance()
-        self.message_bus = message_bus or MessageBus.get_instance()
+        self.state_store = state_store or StateStore()
+        self.message_bus = message_bus or MessageBus()
         
         self.email_delay = timedelta(hours=email_delay_hours)
         self.escalation_delay = timedelta(hours=escalation_delay_hours)
