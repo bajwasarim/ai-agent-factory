@@ -10,6 +10,7 @@ from pipelines.maps_web_missing.agents.lead_formatter_agent import LeadFormatter
 from pipelines.maps_web_missing.agents.exporter_agent import ExporterAgent
 from pipelines.maps_web_missing.agents.google_sheets_export_agent import GoogleSheetsExportAgent
 from pipelines.maps_web_missing.agents.retry_input_loader_agent import RetryInputLoaderAgent
+from pipelines.maps_web_missing.agents.landing_page_generator_agent import LandingPageGeneratorAgent
 
 __all__ = [
     "MapsSearchAgent",
@@ -22,4 +23,5 @@ __all__ = [
     "ExporterAgent",
     "GoogleSheetsExportAgent",
     "RetryInputLoaderAgent",
+    "LandingPageGeneratorAgent",
 ]
