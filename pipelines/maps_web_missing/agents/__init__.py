@@ -5,6 +5,7 @@ from pipelines.maps_web_missing.agents.business_normalize_agent import BusinessN
 from pipelines.maps_web_missing.agents.website_presence_validator import WebsitePresenceValidator
 from pipelines.maps_web_missing.agents.lead_router_agent import LeadRouterAgent
 from pipelines.maps_web_missing.agents.lead_scoring_agent import LeadScoringAgent
+from pipelines.maps_web_missing.agents.enrichment_aggregator_agent import EnrichmentAggregatorAgent
 from pipelines.maps_web_missing.agents.lead_formatter_agent import LeadFormatterAgent
 from pipelines.maps_web_missing.agents.exporter_agent import ExporterAgent
 from pipelines.maps_web_missing.agents.google_sheets_export_agent import GoogleSheetsExportAgent
@@ -16,6 +17,7 @@ __all__ = [
     "WebsitePresenceValidator",
     "LeadRouterAgent",
     "LeadScoringAgent",
+    "EnrichmentAggregatorAgent",
     "LeadFormatterAgent",
     "ExporterAgent",
     "GoogleSheetsExportAgent",
