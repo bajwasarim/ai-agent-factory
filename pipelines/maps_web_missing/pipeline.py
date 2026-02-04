@@ -13,6 +13,8 @@ from pipelines.maps_web_missing.agents.maps_search_agent import MapsSearchAgent
 from pipelines.maps_web_missing.agents.business_normalize_agent import BusinessNormalizeAgent
 from pipelines.maps_web_missing.agents.website_presence_validator import WebsitePresenceValidator
 from pipelines.maps_web_missing.agents.lead_router_agent import LeadRouterAgent
+from pipelines.maps_web_missing.agents.lead_scoring_agent import LeadScoringAgent
+from pipelines.maps_web_missing.agents.enrichment_aggregator_agent import EnrichmentAggregatorAgent
 from pipelines.maps_web_missing.agents.lead_formatter_agent import LeadFormatterAgent
 from pipelines.maps_web_missing.agents.google_sheets_export_agent import GoogleSheetsExportAgent
 from pipelines.maps_web_missing.agents.retry_input_loader_agent import RetryInputLoaderAgent
@@ -95,6 +97,8 @@ def _build_normal_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
         BusinessNormalizeAgent → normalized_businesses (with dedup_key)
         WebsitePresenceValidator → validated_businesses
         LeadRouterAgent → routed_leads, routing_stats
+        LeadScoringAgent → scored_leads (Phase 4)
+        EnrichmentAggregatorAgent → enriched_leads (Phase 4)
         LeadFormatterAgent → formatted_leads
         GoogleSheetsExportAgent → export_status
 
@@ -113,6 +117,8 @@ def _build_normal_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
             BusinessNormalizeAgent(),
             WebsitePresenceValidator(),
             LeadRouterAgent(),
+            LeadScoringAgent(),              # Phase 4
+            EnrichmentAggregatorAgent(),     # Phase 4
             LeadFormatterAgent(),
             GoogleSheetsExportAgent(enable_file_backup=enable_file_backup),
         ],
@@ -128,6 +134,8 @@ def _build_retry_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
         (skips BusinessNormalizeAgent - data already normalized in sheet)
         WebsitePresenceValidator → validated_businesses (updated)
         LeadRouterAgent → routed_leads, routing_stats
+        LeadScoringAgent → scored_leads (Phase 4)
+        EnrichmentAggregatorAgent → enriched_leads (Phase 4)
         LeadFormatterAgent → formatted_leads
         GoogleSheetsExportAgent → export_status
 
@@ -152,6 +160,8 @@ def _build_retry_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
             # Note: BusinessNormalizeAgent skipped - retry data already normalized
             WebsitePresenceValidator(),
             LeadRouterAgent(),
+            LeadScoringAgent(),              # Phase 4
+            EnrichmentAggregatorAgent(),     # Phase 4
             LeadFormatterAgent(),
             GoogleSheetsExportAgent(enable_file_backup=enable_file_backup),
         ],

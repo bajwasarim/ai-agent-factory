@@ -134,8 +134,8 @@ class TestNormalModeUnchanged:
         """Normal mode has expected number of agents."""
         pipeline = build_pipeline(mode="normal")
 
-        # MapsSearch → Normalize → Validate → Route → Format → Export
-        assert len(pipeline.agents) == 6
+        # MapsSearch → Normalize → Validate → Route → Score → Enrich → Format → Export
+        assert len(pipeline.agents) == 8
 
     def test_normal_mode_agent_sequence(self):
         """Normal mode has correct agent sequence."""
@@ -147,6 +147,8 @@ class TestNormalModeUnchanged:
             "BusinessNormalizeAgent",
             "WebsitePresenceValidator",
             "LeadRouterAgent",
+            "LeadScoringAgent",
+            "EnrichmentAggregatorAgent",
             "LeadFormatterAgent",
             "GoogleSheetsExportAgent",
         ]
@@ -202,15 +204,17 @@ class TestRetryModeSelection:
             "RetryInputLoaderAgent",
             "WebsitePresenceValidator",
             "LeadRouterAgent",
+            "LeadScoringAgent",
+            "EnrichmentAggregatorAgent",
             "LeadFormatterAgent",
             "GoogleSheetsExportAgent",
         ]
         assert agent_types == expected
 
-    def test_retry_mode_has_five_agents(self):
-        """Retry mode has 5 agents (no Maps, no Normalize)."""
+    def test_retry_mode_has_seven_agents(self):
+        """Retry mode has 7 agents (no Maps, no Normalize, but includes Phase 4)."""
         pipeline = build_pipeline(mode="retry")
-        assert len(pipeline.agents) == 5
+        assert len(pipeline.agents) == 7
 
     def test_retry_mode_pipeline_name(self):
         """Retry mode pipeline has correct name."""
@@ -439,12 +443,12 @@ class TestBackwardCompatibility:
         pipeline = build_pipeline()
 
         assert isinstance(pipeline.agents[0], MapsSearchAgent)
-        assert len(pipeline.agents) == 6
+        assert len(pipeline.agents) == 8  # Updated for Phase 4
 
-    def test_normal_pipeline_has_six_agents(self):
-        """Normal pipeline has exactly 6 agents (unchanged from before)."""
+    def test_normal_pipeline_has_eight_agents(self):
+        """Normal pipeline has exactly 8 agents (Phase 4 added Scoring + Enrichment)."""
         pipeline = build_pipeline(mode="normal")
-        assert len(pipeline.agents) == 6
+        assert len(pipeline.agents) == 8
 
     def test_export_agent_is_last_in_both_modes(self):
         """GoogleSheetsExportAgent is last agent in both modes."""

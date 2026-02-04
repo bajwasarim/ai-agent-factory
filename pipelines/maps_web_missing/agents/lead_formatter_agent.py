@@ -10,14 +10,18 @@ logger = get_logger(__name__)
 
 class LeadFormatterAgent(BaseAgent):
     """
-    Agent that formats validated businesses into final lead structure.
+    Agent that formats enriched leads into final lead structure.
 
     Prepares leads for export with consistent formatting and adds
-    summary metadata. Uses website validation results from
-    WebsitePresenceValidator.
+    summary metadata. Preserves quality and enrichment blocks from
+    Phase 4 agents.
 
-    Input: validated_businesses (or normalized_businesses), query, location
+    Input: enriched_leads (from EnrichmentAggregatorAgent) or routed_leads (fallback)
     Output: formatted_leads, summary
+
+    Contract:
+        - dedup_key, lead_route, target_sheet MUST be preserved unchanged
+        - quality and enrichment blocks MUST be passed through
     """
 
     def __init__(self) -> None:
@@ -26,13 +30,14 @@ class LeadFormatterAgent(BaseAgent):
 
     def run(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Format routed leads into final lead structure.
+        Format enriched leads into final lead structure.
 
         Transparent transformer: field rename/formatting only.
         No filtering, no routing logic, no dedup generation.
 
         Args:
-            input_data: Dict with 'routed_leads' from LeadRouterAgent.
+            input_data: Dict with 'enriched_leads' from EnrichmentAggregatorAgent
+                       or 'routed_leads' from LeadRouterAgent (backward compat).
 
         Returns:
             Dict with 'formatted_leads' and 'summary'.
@@ -40,8 +45,8 @@ class LeadFormatterAgent(BaseAgent):
         Raises:
             ValueError: If dedup_key is missing (pipeline contract violation).
         """
-        # Read from routed_leads (new contract)
-        businesses = input_data.get("routed_leads", [])
+        # Read from enriched_leads (new Phase 4 contract) or routed_leads (fallback)
+        businesses = input_data.get("enriched_leads") or input_data.get("routed_leads", [])
         query = input_data.get("query", "")
         location = input_data.get("location", "")
 
@@ -87,6 +92,9 @@ class LeadFormatterAgent(BaseAgent):
                 # Retry fields (from RetryInputLoaderAgent - preserve if present)
                 "retry_attempt": business.get("retry_attempt"),
                 "last_retry_ts": business.get("last_retry_ts"),
+                # Phase 4 fields (from LeadScoringAgent + EnrichmentAggregatorAgent)
+                "quality": business.get("quality"),
+                "enrichment": business.get("enrichment"),
             })
 
         # Count based on validated website status
