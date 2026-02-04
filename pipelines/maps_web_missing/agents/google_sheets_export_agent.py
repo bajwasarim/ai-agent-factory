@@ -218,7 +218,7 @@ class GoogleSheetsExportAgent(BaseAgent):
 
         if not leads:
             logger.info("No leads to export")
-            return {"export_status": export_status}
+            return {"export_status": export_status, "exported_leads": []}
 
         # =====================================================================
         # PHASE 0: Validate contract fields and partition leads
@@ -265,7 +265,9 @@ class GoogleSheetsExportAgent(BaseAgent):
                 export_status["csv_path"] = file_result.get("csv_path")
 
             self._log_export_summary(export_status)
-            return {"export_status": export_status}
+            
+            # Output exported_leads for downstream agents (e.g., LandingPageGeneratorAgent)
+            return {"export_status": export_status, "exported_leads": leads}
 
         # =====================================================================
         # REAL GOOGLE SHEETS EXPORT (3-PHASE ATOMIC)
@@ -303,7 +305,9 @@ class GoogleSheetsExportAgent(BaseAgent):
             logger.info(f"Backup commit SUCCESS: JSON={file_result.get('json_path')}")
 
         self._log_export_summary(export_status)
-        return {"export_status": export_status}
+        
+        # Output exported_leads for downstream agents (e.g., LandingPageGeneratorAgent)
+        return {"export_status": export_status, "exported_leads": leads}
 
     # =========================================================================
     # FAN-OUT PARTITIONING

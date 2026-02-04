@@ -299,19 +299,19 @@ class TestPhase4IsAdditive:
 class TestPhase4PipelineWiring:
     """Verify Phase 4 agents are wired correctly in pipeline."""
 
-    def test_normal_pipeline_has_eight_agents(self):
-        """Normal pipeline has 8 agents after Phase 4."""
+    def test_normal_pipeline_has_nine_agents(self):
+        """Normal pipeline has 9 agents after Phase 4+5."""
         from pipelines.maps_web_missing.pipeline import _build_normal_pipeline
 
         pipeline = _build_normal_pipeline()
-        assert len(pipeline.agents) == 8
+        assert len(pipeline.agents) == 9
 
-    def test_retry_pipeline_has_seven_agents(self):
-        """Retry pipeline has 7 agents after Phase 4."""
+    def test_retry_pipeline_has_eight_agents(self):
+        """Retry pipeline has 8 agents after Phase 4+5."""
         from pipelines.maps_web_missing.pipeline import _build_retry_pipeline
 
         pipeline = _build_retry_pipeline()
-        assert len(pipeline.agents) == 7
+        assert len(pipeline.agents) == 8
 
     def test_scoring_agent_after_router(self):
         """LeadScoringAgent comes immediately after LeadRouterAgent."""
@@ -349,9 +349,16 @@ class TestPhase4PipelineWiring:
 
         assert formatter_idx == enrichment_idx + 1
 
-    def test_export_agent_is_last(self):
-        """GoogleSheetsExportAgent is still the last agent."""
+    def test_landing_page_agent_is_last(self):
+        """LandingPageGeneratorAgent is the last agent (post-export)."""
         from pipelines.maps_web_missing.pipeline import _build_normal_pipeline
 
         pipeline = _build_normal_pipeline()
-        assert pipeline.agents[-1].name == "GoogleSheetsExportAgent"
+        assert pipeline.agents[-1].name == "LandingPageGeneratorAgent"
+
+    def test_export_agent_before_landing_page(self):
+        """GoogleSheetsExportAgent is second-to-last, before landing pages."""
+        from pipelines.maps_web_missing.pipeline import _build_normal_pipeline
+
+        pipeline = _build_normal_pipeline()
+        assert pipeline.agents[-2].name == "GoogleSheetsExportAgent"

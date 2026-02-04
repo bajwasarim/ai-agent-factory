@@ -18,6 +18,7 @@ from pipelines.maps_web_missing.agents.enrichment_aggregator_agent import Enrich
 from pipelines.maps_web_missing.agents.lead_formatter_agent import LeadFormatterAgent
 from pipelines.maps_web_missing.agents.google_sheets_export_agent import GoogleSheetsExportAgent
 from pipelines.maps_web_missing.agents.retry_input_loader_agent import RetryInputLoaderAgent
+from pipelines.maps_web_missing.agents.landing_page_generator_agent import LandingPageGeneratorAgent
 from pipelines.maps_web_missing.config import PIPELINE_NAME
 from core.logger import get_logger
 
@@ -100,7 +101,8 @@ def _build_normal_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
         LeadScoringAgent → scored_leads (Phase 4)
         EnrichmentAggregatorAgent → enriched_leads (Phase 4)
         LeadFormatterAgent → formatted_leads
-        GoogleSheetsExportAgent → export_status
+        GoogleSheetsExportAgent → exported_leads, export_status
+        LandingPageGeneratorAgent → landing_pages (Phase 5, post-export)
 
     Args:
         enable_file_backup: Whether to also export to JSON/CSV files.
@@ -121,6 +123,7 @@ def _build_normal_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
             EnrichmentAggregatorAgent(),     # Phase 4
             LeadFormatterAgent(),
             GoogleSheetsExportAgent(enable_file_backup=enable_file_backup),
+            LandingPageGeneratorAgent(),     # Phase 5 (post-export)
         ],
     )
 
@@ -137,7 +140,8 @@ def _build_retry_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
         LeadScoringAgent → scored_leads (Phase 4)
         EnrichmentAggregatorAgent → enriched_leads (Phase 4)
         LeadFormatterAgent → formatted_leads
-        GoogleSheetsExportAgent → export_status
+        GoogleSheetsExportAgent → exported_leads, export_status
+        LandingPageGeneratorAgent → landing_pages (Phase 5, post-export)
 
     Note:
         RetryInputLoaderAgent outputs `validated_businesses` directly,
@@ -164,6 +168,7 @@ def _build_retry_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
             EnrichmentAggregatorAgent(),     # Phase 4
             LeadFormatterAgent(),
             GoogleSheetsExportAgent(enable_file_backup=enable_file_backup),
+            LandingPageGeneratorAgent(),     # Phase 5 (post-export)
         ],
     )
 

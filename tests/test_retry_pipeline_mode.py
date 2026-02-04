@@ -134,8 +134,8 @@ class TestNormalModeUnchanged:
         """Normal mode has expected number of agents."""
         pipeline = build_pipeline(mode="normal")
 
-        # MapsSearch → Normalize → Validate → Route → Score → Enrich → Format → Export
-        assert len(pipeline.agents) == 8
+        # MapsSearch → Normalize → Validate → Route → Score → Enrich → Format → Export → Landing
+        assert len(pipeline.agents) == 9
 
     def test_normal_mode_agent_sequence(self):
         """Normal mode has correct agent sequence."""
@@ -151,6 +151,7 @@ class TestNormalModeUnchanged:
             "EnrichmentAggregatorAgent",
             "LeadFormatterAgent",
             "GoogleSheetsExportAgent",
+            "LandingPageGeneratorAgent",
         ]
         assert agent_types == expected
 
@@ -208,13 +209,14 @@ class TestRetryModeSelection:
             "EnrichmentAggregatorAgent",
             "LeadFormatterAgent",
             "GoogleSheetsExportAgent",
+            "LandingPageGeneratorAgent",
         ]
         assert agent_types == expected
 
-    def test_retry_mode_has_seven_agents(self):
-        """Retry mode has 7 agents (no Maps, no Normalize, but includes Phase 4)."""
+    def test_retry_mode_has_eight_agents(self):
+        """Retry mode has 8 agents (no Maps, no Normalize, but includes Phase 4+5)."""
         pipeline = build_pipeline(mode="retry")
-        assert len(pipeline.agents) == 7
+        assert len(pipeline.agents) == 8
 
     def test_retry_mode_pipeline_name(self):
         """Retry mode pipeline has correct name."""
@@ -387,7 +389,8 @@ class TestBuilderFunctions:
         """enable_file_backup flag passed to GoogleSheetsExportAgent in normal mode."""
         pipeline = _build_normal_pipeline(enable_file_backup=False)
 
-        export_agent = pipeline.agents[-1]
+        # GoogleSheetsExportAgent is second-to-last (before LandingPageGeneratorAgent)
+        export_agent = pipeline.agents[-2]
         assert isinstance(export_agent, GoogleSheetsExportAgent)
         # Note: We can't easily verify the flag was passed without inspecting internals
 
@@ -395,7 +398,8 @@ class TestBuilderFunctions:
         """enable_file_backup flag passed to GoogleSheetsExportAgent in retry mode."""
         pipeline = _build_retry_pipeline(enable_file_backup=False)
 
-        export_agent = pipeline.agents[-1]
+        # GoogleSheetsExportAgent is second-to-last (before LandingPageGeneratorAgent)
+        export_agent = pipeline.agents[-2]
         assert isinstance(export_agent, GoogleSheetsExportAgent)
 
 
@@ -443,17 +447,27 @@ class TestBackwardCompatibility:
         pipeline = build_pipeline()
 
         assert isinstance(pipeline.agents[0], MapsSearchAgent)
-        assert len(pipeline.agents) == 8  # Updated for Phase 4
+        assert len(pipeline.agents) == 9  # Updated for Phase 5
 
-    def test_normal_pipeline_has_eight_agents(self):
-        """Normal pipeline has exactly 8 agents (Phase 4 added Scoring + Enrichment)."""
+    def test_normal_pipeline_has_nine_agents(self):
+        """Normal pipeline has exactly 9 agents (Phase 5 added LandingPageGenerator)."""
         pipeline = build_pipeline(mode="normal")
-        assert len(pipeline.agents) == 8
+        assert len(pipeline.agents) == 9
 
-    def test_export_agent_is_last_in_both_modes(self):
-        """GoogleSheetsExportAgent is last agent in both modes."""
+    def test_landing_page_agent_is_last_in_both_modes(self):
+        """LandingPageGeneratorAgent is last agent in both modes (post-export)."""
+        from pipelines.maps_web_missing.agents.landing_page_generator_agent import LandingPageGeneratorAgent
+        
         normal = build_pipeline(mode="normal")
         retry = build_pipeline(mode="retry")
 
-        assert isinstance(normal.agents[-1], GoogleSheetsExportAgent)
-        assert isinstance(retry.agents[-1], GoogleSheetsExportAgent)
+        assert isinstance(normal.agents[-1], LandingPageGeneratorAgent)
+        assert isinstance(retry.agents[-1], LandingPageGeneratorAgent)
+
+    def test_export_agent_before_landing_in_both_modes(self):
+        """GoogleSheetsExportAgent is second-to-last (before landing pages) in both modes."""
+        normal = build_pipeline(mode="normal")
+        retry = build_pipeline(mode="retry")
+
+        assert isinstance(normal.agents[-2], GoogleSheetsExportAgent)
+        assert isinstance(retry.agents[-2], GoogleSheetsExportAgent)
