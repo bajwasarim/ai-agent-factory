@@ -134,8 +134,8 @@ class TestNormalModeUnchanged:
         """Normal mode has expected number of agents."""
         pipeline = build_pipeline(mode="normal")
 
-        # MapsSearch → Normalize → Validate → Route → Score → Enrich → Format → Export → Landing → Outreach
-        assert len(pipeline.agents) == 10
+        # MapsSearch → Normalize → Validate → Route → Score → Enrich → Schedule → Format → Export → Landing → Outreach
+        assert len(pipeline.agents) == 11
 
     def test_normal_mode_agent_sequence(self):
         """Normal mode has correct agent sequence."""
@@ -149,6 +149,7 @@ class TestNormalModeUnchanged:
             "LeadRouterAgent",
             "LeadScoringAgent",
             "EnrichmentAggregatorAgent",
+            "SchedulingAgent",
             "LeadFormatterAgent",
             "GoogleSheetsExportAgent",
             "LandingPageGeneratorAgent",
@@ -208,6 +209,7 @@ class TestRetryModeSelection:
             "LeadRouterAgent",
             "LeadScoringAgent",
             "EnrichmentAggregatorAgent",
+            "SchedulingAgent",
             "LeadFormatterAgent",
             "GoogleSheetsExportAgent",
             "LandingPageGeneratorAgent",
@@ -216,9 +218,9 @@ class TestRetryModeSelection:
         assert agent_types == expected
 
     def test_retry_mode_has_nine_agents(self):
-        """Retry mode has 9 agents (no Maps, no Normalize, but includes Phases 4+5+6)."""
+        """Retry mode has 10 agents (no Maps, no Normalize, but includes Phases 4+5+6 with SchedulingAgent)."""
         pipeline = build_pipeline(mode="retry")
-        assert len(pipeline.agents) == 9
+        assert len(pipeline.agents) == 10
 
     def test_retry_mode_pipeline_name(self):
         """Retry mode pipeline has correct name."""
@@ -449,12 +451,12 @@ class TestBackwardCompatibility:
         pipeline = build_pipeline()
 
         assert isinstance(pipeline.agents[0], MapsSearchAgent)
-        assert len(pipeline.agents) == 10  # Updated for Phase 6
+        assert len(pipeline.agents) == 11  # Updated for SchedulingAgent
 
     def test_normal_pipeline_has_ten_agents(self):
-        """Normal pipeline has exactly 10 agents (Phase 6 added OutreachOrchestrator)."""
+        """Normal pipeline has exactly 11 agents (SchedulingAgent added)."""
         pipeline = build_pipeline(mode="normal")
-        assert len(pipeline.agents) == 10
+        assert len(pipeline.agents) == 11
 
     def test_outreach_orchestrator_is_last_in_both_modes(self):
         """OutreachOrchestrator is last agent in both modes (Phase 6, post-landing)."""

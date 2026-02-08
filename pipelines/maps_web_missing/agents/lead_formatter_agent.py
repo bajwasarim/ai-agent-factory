@@ -16,12 +16,12 @@ class LeadFormatterAgent(BaseAgent):
     summary metadata. Preserves quality and enrichment blocks from
     Phase 4 agents.
 
-    Input: enriched_leads (from EnrichmentAggregatorAgent) or routed_leads (fallback)
+    Input: scheduled_leads (from SchedulingAgent), enriched_leads (fallback), or routed_leads (fallback)
     Output: formatted_leads, summary
 
     Contract:
         - dedup_key, lead_route, target_sheet MUST be preserved unchanged
-        - quality and enrichment blocks MUST be passed through
+        - quality, enrichment, and scheduling blocks MUST be passed through
     """
 
     def __init__(self) -> None:
@@ -36,8 +36,9 @@ class LeadFormatterAgent(BaseAgent):
         No filtering, no routing logic, no dedup generation.
 
         Args:
-            input_data: Dict with 'enriched_leads' from EnrichmentAggregatorAgent
-                       or 'routed_leads' from LeadRouterAgent (backward compat).
+            input_data: Dict with 'scheduled_leads' from SchedulingAgent,
+                       'enriched_leads' from EnrichmentAggregatorAgent (fallback),
+                       or 'routed_leads' from LeadRouterAgent (fallback).
 
         Returns:
             Dict with 'formatted_leads' and 'summary'.
@@ -45,8 +46,12 @@ class LeadFormatterAgent(BaseAgent):
         Raises:
             ValueError: If dedup_key is missing (pipeline contract violation).
         """
-        # Read from enriched_leads (new Phase 4 contract) or routed_leads (fallback)
-        businesses = input_data.get("enriched_leads") or input_data.get("routed_leads", [])
+        # Read from scheduled_leads (new) or enriched_leads (fallback) or routed_leads (legacy)
+        businesses = (
+            input_data.get("scheduled_leads")
+            or input_data.get("enriched_leads")
+            or input_data.get("routed_leads", [])
+        )
         query = input_data.get("query", "")
         location = input_data.get("location", "")
 
@@ -92,9 +97,10 @@ class LeadFormatterAgent(BaseAgent):
                 # Retry fields (from RetryInputLoaderAgent - preserve if present)
                 "retry_attempt": business.get("retry_attempt"),
                 "last_retry_ts": business.get("last_retry_ts"),
-                # Phase 4 fields (from LeadScoringAgent + EnrichmentAggregatorAgent)
+                # Phase 4 fields (from LeadScoringAgent + EnrichmentAggregatorAgent + SchedulingAgent)
                 "quality": business.get("quality"),
                 "enrichment": business.get("enrichment"),
+                "scheduling": business.get("scheduling"),
             })
 
         # Count based on validated website status

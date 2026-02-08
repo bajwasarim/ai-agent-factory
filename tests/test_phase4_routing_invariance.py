@@ -300,18 +300,18 @@ class TestPhase4PipelineWiring:
     """Verify Phase 4 agents are wired correctly in pipeline."""
 
     def test_normal_pipeline_has_ten_agents(self):
-        """Normal pipeline has 10 agents after Phases 4+5+6."""
+        """Normal pipeline has 11 agents after Phases 4+5+6 (includes SchedulingAgent)."""
         from pipelines.maps_web_missing.pipeline import _build_normal_pipeline
 
         pipeline = _build_normal_pipeline()
-        assert len(pipeline.agents) == 10
+        assert len(pipeline.agents) == 11
 
     def test_retry_pipeline_has_nine_agents(self):
-        """Retry pipeline has 9 agents after Phases 4+5+6."""
+        """Retry pipeline has 10 agents after Phases 4+5+6 (includes SchedulingAgent)."""
         from pipelines.maps_web_missing.pipeline import _build_retry_pipeline
 
         pipeline = _build_retry_pipeline()
-        assert len(pipeline.agents) == 9
+        assert len(pipeline.agents) == 10
 
     def test_scoring_agent_after_router(self):
         """LeadScoringAgent comes immediately after LeadRouterAgent."""
@@ -338,16 +338,18 @@ class TestPhase4PipelineWiring:
         assert enrichment_idx == scoring_idx + 1
 
     def test_formatter_after_enrichment(self):
-        """LeadFormatterAgent comes after EnrichmentAggregatorAgent."""
+        """LeadFormatterAgent comes after SchedulingAgent (which follows EnrichmentAggregatorAgent)."""
         from pipelines.maps_web_missing.pipeline import _build_normal_pipeline
 
         pipeline = _build_normal_pipeline()
         agent_names = [agent.name for agent in pipeline.agents]
 
         enrichment_idx = agent_names.index("EnrichmentAggregatorAgent")
+        scheduling_idx = agent_names.index("SchedulingAgent")
         formatter_idx = agent_names.index("LeadFormatterAgent")
 
-        assert formatter_idx == enrichment_idx + 1
+        assert scheduling_idx == enrichment_idx + 1
+        assert formatter_idx == scheduling_idx + 1
 
     def test_outreach_orchestrator_is_last(self):
         """OutreachOrchestrator is the last agent (Phase 6, post-landing)."""

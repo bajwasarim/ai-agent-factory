@@ -16,6 +16,7 @@ from pipelines.maps_web_missing.agents.website_presence_validator import Website
 from pipelines.maps_web_missing.agents.lead_router_agent import LeadRouterAgent
 from pipelines.maps_web_missing.agents.lead_scoring_agent import LeadScoringAgent
 from pipelines.maps_web_missing.agents.enrichment_aggregator_agent import EnrichmentAggregatorAgent
+from pipelines.maps_web_missing.agents.scheduling_agent import SchedulingAgent
 from pipelines.maps_web_missing.agents.lead_formatter_agent import LeadFormatterAgent
 from pipelines.maps_web_missing.agents.google_sheets_export_agent import GoogleSheetsExportAgent
 from pipelines.maps_web_missing.agents.retry_input_loader_agent import RetryInputLoaderAgent
@@ -127,6 +128,7 @@ def _build_normal_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
             LeadRouterAgent(),
             LeadScoringAgent(),              # Phase 4
             EnrichmentAggregatorAgent(),     # Phase 4
+            SchedulingAgent(),               # Phase 4 (scheduling inference)
             LeadFormatterAgent(),
             GoogleSheetsExportAgent(enable_file_backup=enable_file_backup),
             LandingPageGeneratorAgent(),     # Phase 5 (post-export)
@@ -174,6 +176,7 @@ def _build_retry_pipeline(enable_file_backup: bool = True) -> PipelineRunner:
             LeadRouterAgent(),
             LeadScoringAgent(),              # Phase 4
             EnrichmentAggregatorAgent(),     # Phase 4
+            SchedulingAgent(),               # Phase 4 (scheduling inference)
             LeadFormatterAgent(),
             GoogleSheetsExportAgent(enable_file_backup=enable_file_backup),
             LandingPageGeneratorAgent(),     # Phase 5 (post-export)
